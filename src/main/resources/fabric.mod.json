@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "random-datapack",
+  "version": "${version}",
+
+  "name": "Random Datapack",
+  "description": "help me",
+  "authors": [],
+  "contact": {},
+
+  "license": "All-Rights-Reserved",
+  "icon": "assets/random-datapack/icon.png",
+
+  "environment": "server",
+  "entrypoints": {
+    "main": ["zone.oat.random_datapack.RandomDatapack"]
+  },
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  
+  "accessWidener": "random-datapack.classtweaker"
+}

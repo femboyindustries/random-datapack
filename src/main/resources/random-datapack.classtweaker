@@ -1,0 +1,5 @@
+classTweaker  v1  official
+
+accessible method net/minecraft/server/packs/repository/PackRepository discoverAvailable ()Ljava/util/Map;
+accessible field net/minecraft/server/packs/repository/PackRepository available Ljava/util/Map;
+mutable field net/minecraft/server/packs/repository/PackRepository available Ljava/util/Map;
