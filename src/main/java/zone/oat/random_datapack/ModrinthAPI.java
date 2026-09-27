@@ -2,6 +2,8 @@ package zone.oat.random_datapack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,6 +24,8 @@ public class ModrinthAPI {
     public static final String API_BASE = "https://api.modrinth.com/v2";
     public static final String USER_AGENT = "random_datapack";
     public static final String GAME_VERSION = "26.1.2";
+
+    public static final Logger LOGGER = LoggerFactory.getLogger("ModrinthAPI");
     
     static HttpClient client = HttpClient.newHttpClient();
     static Random rng = new Random();
@@ -68,6 +72,8 @@ public class ModrinthAPI {
 
                     // then fetch a random one
                     var index = rng.nextInt(hits);
+
+                    LOGGER.info("hits: %s | index: %s 👍".formatted(hits,index));
 
                     return modrinthGet("/search", Map.ofEntries(
                             Map.entry("facets", facets),

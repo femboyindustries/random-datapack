@@ -2,6 +2,7 @@ package zone.oat.random_datapack;
 
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -12,7 +13,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +37,7 @@ public class RandomDatapack implements ModInitializer {
     private static int DATAPACK_INTERVAL = 800;
     private int loadTimer = DATAPACK_INTERVAL;
     private boolean blockLoading = false;
+    private boolean downloadsPaused = false;
     
     @Override
     public void onInitialize() {
@@ -46,6 +47,13 @@ public class RandomDatapack implements ModInitializer {
                         .then(Commands.argument("interval", IntegerArgumentType.integer())
                             .executes(this::setTimer))));
         });
+
+        CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
+            dispatcher.register(Commands.literal("random-datapack")
+                    .then(Commands.literal("pause")
+                            .then(Commands.argument("paused", BoolArgumentType.bool())
+                                    .executes(this::pauseDownloads))));
+        }));
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             loadTimer = DATAPACK_INTERVAL;
@@ -60,13 +68,20 @@ public class RandomDatapack implements ModInitializer {
         context.getSource().sendSuccess(() -> Component.literal("set timer interval to %s".formatted(value)), false);
         return 1;
     }
+
+    public int pauseDownloads(CommandContext<CommandSourceStack> context){
+        boolean value = BoolArgumentType.getBool(context, "paused");
+        downloadsPaused = value;
+        context.getSource().sendSuccess(() -> Component.literal(value ? "Downloads paused" : "Downloads continue"), false);
+        return 1;
+    }
     
     public void onServerTick(ServerLevel level) {
         if (blockLoading) return;
         
         loadTimer--;
         
-        if (loadTimer <= 0) {
+        if (loadTimer <= 0 && !downloadsPaused) {
             loadTimer = DATAPACK_INTERVAL;
             loadRandomDatapack(level);
         }
