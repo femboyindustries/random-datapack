@@ -46,7 +46,7 @@ public class RandomDatapack implements ModInitializer {
                         .then(Commands.argument("interval", IntegerArgumentType.integer())
                             .executes(this::setTimer))));
         });
-        
+
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             loadTimer = DATAPACK_INTERVAL;
         });
@@ -54,7 +54,7 @@ public class RandomDatapack implements ModInitializer {
     }
     
     public int setTimer(CommandContext<CommandSourceStack> context) {
-        int value = IntegerArgumentType.getInteger(context, "timer");
+        int value = IntegerArgumentType.getInteger(context, "interval");
         DATAPACK_INTERVAL = value;
         loadTimer = Math.min(loadTimer, value);
         context.getSource().sendSuccess(() -> Component.literal("set timer interval to %s".formatted(value)), false);

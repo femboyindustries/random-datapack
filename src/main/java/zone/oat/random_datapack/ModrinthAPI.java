@@ -55,7 +55,7 @@ public class ModrinthAPI {
     public record DatapackResult(String id, String name) {}
     
     public static CompletableFuture<DatapackResult> getRandomDatapack() {
-        String facets = "[[\"versions:" + GAME_VERSION + "\"],[\"project_type:datapack\"],[\"categories:cursed\"]]";
+        String facets = "[[\"versions:" + GAME_VERSION + "\"],[\"project_type:datapack\"]]";
         
         // first fetch how many there are
         return modrinthGet("/search", Map.ofEntries(
