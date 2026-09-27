@@ -3,12 +3,15 @@
   "id": "random-datapack",
   "version": "${version}",
 
-  "name": "Random Datapack",
-  "description": "help me",
-  "authors": [],
-  "contact": {},
+  "name": "Ultra Datapack Shuffle!!",
+  "description": "Download and enable a random datapack from Modrinth every minute. Experience the joys of completely random and unpredictable game additions",
+  "authors": ["moonstruck.nectar", "Mayflower"],
+  "contact": {
+    "sources": "https://github.com/femboyindustries/random-datapack",
+    "homepage": "https://modrinth.com/mod/ultra-datapack-shuffle"
+  },
 
-  "license": "All-Rights-Reserved",
+  "license": "CC0-1.0",
   "icon": "assets/random-datapack/icon.png",
 
   "environment": "*",
