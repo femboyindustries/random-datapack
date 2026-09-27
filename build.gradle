@@ -23,6 +23,7 @@ repositories {
 loom {
     accessWidenerPath = file("src/main/resources/random-datapack.classtweaker")
 }
+loom.log4jConfigs.from "log4j-dev.xml"
 
 dependencies {
     // To change the versions see the gradle.properties file

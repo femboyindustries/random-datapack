@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +19,20 @@ import java.net.http.HttpResponse;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 public class ModrinthAPI {
     public static final String API_BASE = "https://api.modrinth.com/v2";
+    // curl 'https://api.modrinth.com/v2/tag/category' | jq 'map(select(.project_type == "mod")) | map(.name)'
+    public static final List<String> DATAPACK_CATEGORIES = List.of(
+        "adventure", "cursed", "decoration", "economy", "equipment", "food", "game-mechanics", "library",
+        "magic", "management", "minigame", "mobs", "optimization", "social", "storage", "technology", "transportation",
+        "utility", "worldgen"
+    );
     
     private static String getUserAgent() {
         var ver = FabricLoader.getInstance()
@@ -69,14 +78,24 @@ public class ModrinthAPI {
                 .thenApply(JsonParser::parseString);
     }
     
-    public record DatapackResult(String id, String name, String description, String author) {}
+    public record DatapackResult(String id, String name, String description, String author, String slug) {}
     
-    public static CompletableFuture<DatapackResult> getRandomDatapack() {
-        String facets = "[[\"versions:" + getGameVersion() + "\"],[\"project_type:datapack\"]]";
+    public static CompletableFuture<DatapackResult> getRandomDatapack(@Nullable String categoryFilter) {
+        var facets = new ArrayList<String>();
+        facets.add("[\"versions:" + getGameVersion() + "\"]");
+        facets.add("[\"project_type:datapack\"]");
+        
+        if (categoryFilter != null) {
+            facets.add("[\"categories:" + categoryFilter + "\"]");
+        }
+        
+        var facetString = "[" + String.join(",", facets) + "]";
+        
+        LOGGER.debug("facetString: {}", facetString);
         
         // first fetch how many there are
         return modrinthGet("/search", Map.ofEntries(
-                Map.entry("facets", facets),
+                Map.entry("facets", facetString),
                 Map.entry("limit", "1"),
                 Map.entry("index", "newest")
         ))
@@ -86,10 +105,10 @@ public class ModrinthAPI {
                     // then fetch a random one
                     var index = rng.nextInt(hits);
 
-                    LOGGER.info("hits: {} | index: {} 👍", hits, index);
+                    LOGGER.debug("hits: {} | index: {} 👍", hits, index);
 
                     return modrinthGet("/search", Map.ofEntries(
-                            Map.entry("facets", facets),
+                            Map.entry("facets", facetString),
                             Map.entry("limit", "1"),
                             Map.entry("index", "newest"),
                             Map.entry("offset", String.valueOf(index))
@@ -102,7 +121,8 @@ public class ModrinthAPI {
                             project.get("project_id").getAsString(),
                             project.get("title").getAsString(),
                             project.get("description").getAsString(),
-                            project.get("author").getAsString()
+                            project.get("author").getAsString(),
+                            project.get("slug").getAsString()
                     );
                 });
     }
