@@ -69,7 +69,7 @@ public class ModrinthAPI {
                 .thenApply(JsonParser::parseString);
     }
     
-    public record DatapackResult(String id, String name) {}
+    public record DatapackResult(String id, String name, String description, String author) {}
     
     public static CompletableFuture<DatapackResult> getRandomDatapack() {
         String facets = "[[\"versions:" + getGameVersion() + "\"],[\"project_type:datapack\"]]";
@@ -98,7 +98,12 @@ public class ModrinthAPI {
                 .thenApply(results -> {
                     var project = results.getAsJsonObject().get("hits").getAsJsonArray().get(0).getAsJsonObject();
 
-                    return new DatapackResult(project.get("project_id").getAsString(), project.get("title").getAsString());
+                    return new DatapackResult(
+                            project.get("project_id").getAsString(),
+                            project.get("title").getAsString(),
+                            project.get("description").getAsString(),
+                            project.get("author").getAsString()
+                    );
                 });
     }
     
