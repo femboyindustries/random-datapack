@@ -1,6 +1,5 @@
 package zone.oat.random_datapack;
 
-import com.google.common.collect.Lists;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -10,6 +9,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.TimeArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.repository.Pack;
@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -33,9 +32,8 @@ public class RandomDatapack implements ModInitializer {
     public static final String MOD_ID = "random-datapack";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     
-    //private static int DATAPACK_INTERVAL = 1200; 
-    private static int DATAPACK_INTERVAL = 800;
-    private int loadTimer = DATAPACK_INTERVAL;
+    private static int LOAD_INTERVAL = 1200;
+    private int loadTimer = LOAD_INTERVAL;
     private boolean blockLoading = false;
     private boolean downloadsPaused = false;
     
@@ -43,27 +41,25 @@ public class RandomDatapack implements ModInitializer {
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("random-datapack")
+                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                     .then(Commands.literal("timer")
-                        .then(Commands.argument("interval", IntegerArgumentType.integer())
-                            .executes(this::setTimer))));
-        });
-
-        CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(Commands.literal("random-datapack")
+                        .then(Commands.argument("interval", TimeArgument.time())
+                            .executes(this::setTimer)))
                     .then(Commands.literal("pause")
                             .then(Commands.argument("paused", BoolArgumentType.bool())
-                                    .executes(this::pauseDownloads))));
-        }));
+                                    .executes(this::pauseDownloads)))
+            );
+        });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            loadTimer = DATAPACK_INTERVAL;
+            loadTimer = LOAD_INTERVAL;
         });
         ServerTickEvents.END_LEVEL_TICK.register(this::onServerTick);
     }
     
     public int setTimer(CommandContext<CommandSourceStack> context) {
         int value = IntegerArgumentType.getInteger(context, "interval");
-        DATAPACK_INTERVAL = value;
+        LOAD_INTERVAL = value;
         loadTimer = Math.min(loadTimer, value);
         context.getSource().sendSuccess(() -> Component.literal("set timer interval to %s".formatted(value)), false);
         return 1;
@@ -72,7 +68,7 @@ public class RandomDatapack implements ModInitializer {
     public int pauseDownloads(CommandContext<CommandSourceStack> context){
         boolean value = BoolArgumentType.getBool(context, "paused");
         downloadsPaused = value;
-        context.getSource().sendSuccess(() -> Component.literal(value ? "Downloads paused" : "Downloads continue"), false);
+        context.getSource().sendSuccess(() -> Component.literal(value ? "timer paused" : "timer started"), false);
         return 1;
     }
     
@@ -82,7 +78,7 @@ public class RandomDatapack implements ModInitializer {
         loadTimer--;
         
         if (loadTimer <= 0 && !downloadsPaused) {
-            loadTimer = DATAPACK_INTERVAL;
+            loadTimer = LOAD_INTERVAL;
             loadRandomDatapack(level);
         }
     }

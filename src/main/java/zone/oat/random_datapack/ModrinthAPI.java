@@ -2,6 +2,8 @@ package zone.oat.random_datapack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.SharedConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +24,19 @@ import java.util.concurrent.CompletableFuture;
 
 public class ModrinthAPI {
     public static final String API_BASE = "https://api.modrinth.com/v2";
-    public static final String USER_AGENT = "random_datapack";
-    public static final String GAME_VERSION = "26.1.2";
+    
+    private static String getUserAgent() {
+        var ver = FabricLoader.getInstance()
+                .getModContainer(RandomDatapack.MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("Unknown");
+        
+        return "random_datapack/%s (https://github.com/femboyindustries/random-datapack)".formatted(ver);
+    }
+    
+    private static String getGameVersion() {
+        return SharedConstants.getCurrentVersion().name();
+    }
 
     public static final Logger LOGGER = LoggerFactory.getLogger("ModrinthAPI");
     
@@ -48,7 +61,7 @@ public class ModrinthAPI {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
-                .header("User-Agent", USER_AGENT)
+                .header("User-Agent", getUserAgent())
                 .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -59,7 +72,7 @@ public class ModrinthAPI {
     public record DatapackResult(String id, String name) {}
     
     public static CompletableFuture<DatapackResult> getRandomDatapack() {
-        String facets = "[[\"versions:" + GAME_VERSION + "\"],[\"project_type:datapack\"]]";
+        String facets = "[[\"versions:" + getGameVersion() + "\"],[\"project_type:datapack\"]]";
         
         // first fetch how many there are
         return modrinthGet("/search", Map.ofEntries(
@@ -73,7 +86,7 @@ public class ModrinthAPI {
                     // then fetch a random one
                     var index = rng.nextInt(hits);
 
-                    LOGGER.info("hits: %s | index: %s 👍".formatted(hits,index));
+                    LOGGER.info("hits: {} | index: {} 👍", hits, index);
 
                     return modrinthGet("/search", Map.ofEntries(
                             Map.entry("facets", facets),
@@ -94,7 +107,7 @@ public class ModrinthAPI {
     public static CompletableFuture<DatapackFileResult> getLatestDatapackFile(String projectID) {
         return modrinthGet("/project/" + projectID + "/version", Map.ofEntries(
                 Map.entry("loaders", "[\"datapack\"]"),
-                Map.entry("game_versions", "[\"" + GAME_VERSION + "\"]"),
+                Map.entry("game_versions", "[\"" + getGameVersion() + "\"]"),
                 Map.entry("include_changelog", "false")
         ))
                 .thenApply(results -> {
@@ -108,7 +121,7 @@ public class ModrinthAPI {
 
     public static ReadableByteChannel download(URL url) throws IOException {
         URLConnection conn = url.openConnection();
-        conn.setRequestProperty("User-Agent", USER_AGENT);
+        conn.setRequestProperty("User-Agent", getUserAgent());
         return Channels.newChannel(conn.getInputStream());
     }
 }
